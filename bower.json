@@ -1,0 +1,35 @@
+{
+  "name": "paper-input-number",
+  "version": "2.0.0",
+  "description": "Material design input number field",
+  "authors": [
+    "benoit.claveau@gmail.com"
+  ],
+  "keywords": [
+    "web-components",
+    "polymer",
+    "input",
+    "number"
+  ],
+  "main": [
+    "paper-input-number.html",
+    "number-validator.html"
+  ],
+  "private": true,
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/BenoitClaveau/paper-input-number.git"
+  },
+  "license": "http://polymer.github.io/LICENSE.txt",
+  "ignore": [],
+  "dependencies": {
+    "polymer": "^2.0.0",
+    "paper-input": "^2.0.5",
+    "iron-validator-behavior": "^2.0.0",
+    "iron-form-element-behavior": "^2.0.0"
+  },
+  "devDependencies": {},
+  "resolutions": {
+    "webcomponentsjs": "^1.0.0"
+  }
+}

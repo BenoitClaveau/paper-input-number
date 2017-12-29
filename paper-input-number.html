@@ -1,0 +1,227 @@
+<link rel="import" href="../../bower_components/iron-form-element-behavior/iron-form-element-behavior.html">
+<link rel="import" href="../../bower_components/paper-input/paper-input-behavior.html">
+<link rel="import" href="number-validator.html">
+
+<dom-module id="paper-input-number">
+  <template>
+    <style>
+      :host {
+        display: block;
+
+        --paper-input-suffix: {
+          padding-left: 4px;
+          margin-left: 4px;
+          font-size: 10px;
+          color: var(--light-font-color);
+          line-height: 21px;
+          margin-top: 3px;
+          box-sizing: border-box;
+        }
+
+        --paper-input-prefix: {
+          padding-right: 4px;
+          color: var(--light-font-color);
+        }
+      }
+
+      :host([focused]) {
+        outline: none;
+      }
+
+      :host([hidden]) {
+        display: none !important;
+      }
+
+      #input {
+        text-align: right;
+        border: none
+      }
+      #input:focus {
+        outline: none;
+      }
+
+      #input::-webkit-input-placeholder {
+        color: var(--paper-input-container-color, --secondary-text-color);
+      }
+
+      #input:-moz-placeholder {
+        color: var(--paper-input-container-color, --secondary-text-color);
+      }
+
+      #input::-moz-placeholder {
+        color: var(--paper-input-container-color, --secondary-text-color);
+      }
+
+      #input:-ms-input-placeholder {
+        color: var(--paper-input-container-color, --secondary-text-color);
+      }
+
+      label {
+        pointer-events: none;
+      }
+    </style>
+
+    <paper-input-container id="container"
+        disabled$="[[disabled]]"
+        auto-validate="true"
+        attr-for-value="bind-value"
+        no-label-float="[[noLabelFloat]]" 
+        always-float-label="true"
+        invalid="[[invalid]]">
+
+      <div slot="prefix"><slot name="prefix"></div>
+
+      <label slot="label" hidden$="[[!label]]" aria-hidden="true" for="input">[[label]]</label>
+      
+      <number-validator></number-validator>
+      
+      <iron-input slot="input"
+        aria-labelledby$="[[_ariaLabelledBy]]"
+        aria-describedby$="[[_ariaDescribedBy]]"
+        disabled$="[[disabled]]"
+        title$="[[title]]"
+        bind-value="{{temp}}"
+        auto-validate
+        validator="number-validator"
+        type="text"
+        required$="[[required]]"
+        autofocus$="[[autofocus]]"
+        inputmode$="[[inputmode]]"
+        placeholder$="[[placeholder]]"
+        readonly$="[[readonly]]"
+        size$="[[size]]"
+        tabindex$="[[tabindex]]">
+        <input id="input">
+      </iron-input>
+
+      <div slot="suffix"><slot name="suffix"></slot></div>
+
+      <template is="dom-if" if="[[errorMessage]]">
+        <paper-input-error aria-live="assertive">[[errorMessage]]</paper-input-error>
+      </template>
+
+      <template is="dom-if" if="[[charCounter]]">
+        <paper-input-char-counter></paper-input-char-counter>
+      </template>
+
+    </paper-input-container>
+  </template>
+</dom-module>
+
+<script>
+  Polymer({
+    is: 'paper-input-number',
+
+    behaviors: [
+      Polymer.IronFormElementBehavior,
+      Polymer.PaperInputBehavior
+    ],
+
+    properties: {
+      value: {
+        type: Number,
+        reflectToAttribute: true,
+        notify: true
+      },
+      temp: {
+        type: String
+      }
+    },
+
+    observers: [
+      'tempChanged(temp)',
+      'valueChanged(value)'
+    ],
+
+    ready() {
+      this.$.input.addEventListener('keypress', this.onKeyPress.bind(this));
+      this.$.input.addEventListener('keydown', this.onKeyDown.bind(this));
+      this.$.input.addEventListener('focus', this.onFocus.bind(this));
+    },
+
+    tempChanged(temp) {
+      if (!temp || temp == "-") {
+        this.set("value", null);
+        return;
+      }
+      var value = parseFloat(temp);
+      if (value != this.value) {
+        this.set("value", value);
+      }
+    },
+
+    valueChanged(value) {
+      if (value == null || Number.isNaN(value)) {
+        this.set("temp", null);
+        return;
+      }
+      if (value != parseFloat(this.temp)) {
+        this.set("temp", value.toString())
+      }
+    },
+
+    onKeyPress(e) {
+      
+      if (e.metaKey || e.ctrlKey || e.altKey)
+        return;
+
+      var thisChar = String.fromCharCode(e.charCode);
+      if (this._isPrintable(e) && !/[\-\d|\.]/.test(thisChar)) 
+        e.preventDefault();
+      
+      else if (thisChar == "." && this.temp.indexOf(".") !== -1) 
+        e.preventDefault();
+      
+      else if (thisChar == "-" && this.temp && this.temp.length)
+        e.preventDefault();
+    },
+
+    onKeyDown(e) {
+      if (e.metaKey || e.ctrlKey || e.altKey)
+        return;
+
+      if (e.keyCode == 38) {
+        this.set("value", this.value + 1);
+        e.preventDefault();
+      }
+      else if (e.keyCode == 40) {
+        this.set("value", this.value - 1);
+        e.preventDefault();
+      }
+    },
+
+    onFocus(e) {
+      this.$.input.setSelectionRange(0, this.temp.length);
+    },
+
+    _isPrintable(event) {
+      // What a control/printable character is varies wildly based on the browser.
+      // - most control characters (arrows, backspace) do not send a `keypress` event
+      //   in Chrome, but the *do* on Firefox
+      // - in Firefox, when they do send a `keypress` event, control chars have
+      //   a charCode = 0, keyCode = xx (for ex. 40 for down arrow)
+      // - printable characters always send a keypress event.
+      // - in Firefox, printable chars always have a keyCode = 0. In Chrome, the keyCode
+      //   always matches the charCode.
+      // None of this makes any sense.
+      // For these keys, ASCII code == browser keycode.
+      var anyNonPrintable =
+        (event.keyCode == 8)   ||  // backspace
+        (event.keyCode == 9)   ||  // tab
+        (event.keyCode == 13)  ||  // enter
+        (event.keyCode == 27);     // escape
+      // For these keys, make sure it's a browser keycode and not an ASCII code.
+      var mozNonPrintable =
+        (event.keyCode == 19)  ||  // pause
+        (event.keyCode == 20)  ||  // caps lock
+        (event.keyCode == 45)  ||  // insert
+        (event.keyCode == 46)  ||  // delete
+        (event.keyCode == 144) ||  // num lock
+        (event.keyCode == 145) ||  // scroll lock
+        (event.keyCode > 32 && event.keyCode < 41)   || // page up/down, end, home, arrows
+        (event.keyCode > 111 && event.keyCode < 124); // fn keys
+      return !anyNonPrintable && !(event.charCode == 0 && mozNonPrintable);
+    },
+
+  });
+</script>
