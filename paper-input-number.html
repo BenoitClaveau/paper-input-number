@@ -191,6 +191,7 @@
     },
 
     onFocus(e) {
+      if (!this.temp) return;
       this.$.input.setSelectionRange(0, this.temp.length);
     },
 
